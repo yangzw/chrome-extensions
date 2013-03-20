@@ -1,0 +1,10 @@
+{
+	"manifest_version":2,
+	"name":"the first chrome add-ons",
+	"version":"1.0",
+	"description":"my first chrome add-ons",
+	"browser_action":{
+		"default_icon":"icon.jpg",
+		"default_popup":"poput.html"
+	}
+}
