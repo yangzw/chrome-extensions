@@ -49,9 +49,11 @@ function buildPopupDom(divName, data,count) {
 
     ul.appendChild(li);
   }
-  var charts = document.createElement('p');
+  var charts = document.createElement('a');
+  charts.href = "./charts.html";
+  charts.target = "_blank";
   charts.appendChild(document.createTextNode("vie the charts"));
-  charts.addEventListener('click',inNewTab);
+  //charts.addEventListener('click',inNewTab);
   popupDiv.appendChild(charts);
 }
 
@@ -60,7 +62,7 @@ function buildPopupDom(divName, data,count) {
 function buildTypedUrlList(divName) {
   // To look for history items visited in the last week,
   // subtract a week of microseconds from the current time.
-  var microsecondsPerWeek = 1000 * 60 * 60 * 24 * 7;
+  var microsecondsPerWeek = 1000 * 60 * 60 * 24 * 7*3;
   var oneWeekAgo = (new Date).getTime() - microsecondsPerWeek;
 
   // Track the number of callbacks from chrome.history.getVisits()
@@ -69,20 +71,31 @@ function buildTypedUrlList(divName) {
 
   chrome.history.search({
       'text': '',              // Return every history item....
-      'startTime': oneWeekAgo  // that was accessed less than one week ago.
+      'startTime': oneWeekAgo,  // that was accessed less than one week ago.
+       'maxResults': 100000       //set the max to 1000
     },
     function(historyItems) {
       // For each history item, get details on all visits.
       for (var i = 0; i < historyItems.length; ++i) {
         var url = historyItems[i].url;
-        var processVisitsWithUrl = function(url) {
+        var processVisitsWithUrl = function(url){ 
           // We need the url of the visited item to process the visit.
           // Use a closure to bind the  url into the callback's args.
           return function(visitItems) {
             processVisits(url, visitItems);
           };
         };
+        //var tryfunction = function(){
+         //   console.log("this is " + i + "times to call");
+       // }
         chrome.history.getVisits({url: url}, processVisitsWithUrl(url));
+        //chrome.history.getVisits({url:url},tryfunction);
+        //if(i == 50){
+         // console.log(numRequestsOutstanding);
+       // }
+        //if(i == 99){
+         // console.log("i do first");
+        //}
         numRequestsOutstanding++;
       }
       //in case historyItems.length = 0
@@ -98,11 +111,18 @@ function buildTypedUrlList(divName) {
 
   // Callback for chrome.history.getVisits().  Counts the number of
   // times a user visited a URL by typing the address.
-  var processVisits = function(url, visitItems) {
-	  if(!urlToCount[url]){
-		  urlToCount[url] = 0;
-	  }
-	  urlToCount[url] += visitItems.length;
+  var processVisits = function(url, visititems) {
+    console.log(url);
+    //var pattern = /(.*?\.(com|cn|org|html|net|fm|se|me))/; 
+    var pattern = /^(.*?:\/\/.*?\/)/;
+    var mathes = pattern.exec(url);
+    var shorturl = mathes[1] || url;
+    //var shorturl = window.location.host(url);
+    if(!urlToCount[shorturl]){
+      urlToCount[shorturl] = 0;
+    }
+    urlToCount[shorturl] += visititems.length;
+   // console.log(numRequestsOutstanding);
 
     // If this is the final outstanding call to processVisits(),
     // then we have the final results.  Use them to build the list
@@ -117,7 +137,7 @@ function buildTypedUrlList(divName) {
     // Get the top scorring urls.
     urlArray = [];
     for (var url in urlToCount) {
-	    //if(urlToCount[url] > 10)
+	    if(urlToCount[url] > 3)
       urlArray.push(url);
     }
 
